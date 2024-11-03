@@ -31,7 +31,7 @@ import (
 )
 
 type Request struct {
-	Targets []string
+	Principals []string
 
 	Lifetime Duration
 
@@ -44,6 +44,10 @@ type Response struct {
 }
 
 type Duration time.Duration
+
+func (d *Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(time.Duration(*d).String())
+}
 
 func (d *Duration) UnmarshalJSON(b []byte) error {
 	var v string
@@ -106,6 +110,10 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("could not decode JSON request: %w", err)
 		}
 
+		if len(r.Principals) == 0 {
+			r.Principals = []string{u.Username}
+		}
+
 		pubkey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(r.PublicKey))
 		if err != nil {
 			return fmt.Errorf("could not parse public key in authorized_keys format: %w", err)
@@ -117,7 +125,7 @@ var runCmd = &cobra.Command{
 		}
 		expiry := time.Now().Add(lifetime)
 
-		for _, t := range r.Targets {
+		for _, t := range r.Principals {
 			if !policy.ForUser(u).CanIssueFor(t, time.Duration(r.Lifetime)) {
 				return fmt.Errorf("policy does not allow %q to issue for %q with lifetime %v", args[0], t, time.Duration(r.Lifetime))
 			}
@@ -137,7 +145,7 @@ var runCmd = &cobra.Command{
 			Serial:          0,
 			CertType:        ssh.UserCert,
 			KeyId:           fmt.Sprintf("%s@%s", u.Username, h),
-			ValidPrincipals: r.Targets,
+			ValidPrincipals: r.Principals,
 			ValidAfter:      uint64(time.Now().Add(-backdate).Unix()),
 			ValidBefore:     uint64(expiry.Unix()),
 			Permissions: ssh.Permissions{

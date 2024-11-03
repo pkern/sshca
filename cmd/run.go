@@ -85,10 +85,11 @@ func loadSigningKey(filename string) (crypto.PrivateKey, error) {
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:   "run USERNAME",
-	Short: "Run the CA for the specified user",
-	Long:  `Reads a CA request from stdin and issues a certificate if the policy allows it.`,
-	Args:  cobra.ExactArgs(1),
+	Use:          "run USERNAME",
+	Short:        "Run the CA for the specified user",
+	Long:         `Reads a CA request from stdin and issues a certificate if the policy allows it.`,
+	Args:         cobra.ExactArgs(1),
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		u, err := user.Lookup(args[0])
 		if err != nil {

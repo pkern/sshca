@@ -1,7 +1,8 @@
 # sshca
 
-A simple SSH Certificate Authority that can be run from an SSH `ForceCommand` -
-to derive a short lived certificate from a touch-based authentication.
+A simple SSH Certificate Authority that can be run from an SSH `command=`
+restriction - to derive a short lived certificate from a touch-based
+authentication.
 
 ## Getting a certificate
 
@@ -46,3 +47,33 @@ $ ssh-keygen -L -f /run/user/1000/sshca/example-cert.pub
                 permit-user-rc
 # Shell to some host that accepts the CA
 ```
+
+## Setting up the CA
+
+You need to setup a host where users can log into (preferably) a dedicated user
+via SSH. For this role account you auto-generate an `authorized_keys` file
+based on the existing `sk-` keys you collected from your user base.
+
+In the above setup, the CA runs as user `sshca` on host `cahost.example.com`.
+`authorized_keys` would look like this:
+
+```
+command="/path/to/sshca run user",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,no-user-rc sk-ssh-ed25519@openssh.com [...]
+command="/path/to/sshca run anotheruser",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,no-user-rc sk-ssh-ed25519@openssh.com [...]
+```
+
+The CA expects the location of the signing key in `~/.sshca.toml`:
+
+```
+signing_key_filename = "/home/sshca/ca/current"
+```
+
+The signing key can be generated using the usual OpenSSH tooling. You likely
+want to regularly rotate the CA's key and distribute current, old, and next CA
+keys to all of the hosts you want users to be able to authenticate to.  In the
+above example `current` is a symlink to a versioned private key file.
+
+The default, compiled-in policy of sshca will only allow users that are in the
+Unix group `adm` on the CA's host to mint certificates for user `root`.
+Everyone is restricted to just the same username the CA binary is run for -
+i.e. what is passed in on the command-line.

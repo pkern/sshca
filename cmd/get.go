@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -33,6 +34,13 @@ import (
 )
 
 const output = "/run/user/1000/sshca-debian"
+
+func expandUser(val string) string {
+	if u := os.Getenv("USER"); u != "" {
+		val = strings.ReplaceAll(val, "$USER", u)
+	}
+	return val
+}
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
@@ -50,9 +58,16 @@ var getCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("could not generate SSH public key: %w", err)
 		}
+		principals := viper.GetStringSlice("principals")
+		if len(principals) == 0 {
+			principals = []string{"$USER"}
+		}
+		for i, p := range principals {
+			principals[i] = expandUser(p)
+		}
 		r, err := json.Marshal(&Request{
 			Lifetime:   Duration(viper.GetDuration("lifetime")),
-			Principals: viper.GetStringSlice("principals"),
+			Principals: principals,
 			PublicKey:  string(ssh.MarshalAuthorizedKey(sshPub)),
 		})
 		if err != nil {

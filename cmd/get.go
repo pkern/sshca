@@ -33,8 +33,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const output = "/run/user/1000/sshca-debian"
-
 func expandUser(val string) string {
 	if u := os.Getenv("USER"); u != "" {
 		val = strings.ReplaceAll(val, "$USER", u)
@@ -106,9 +104,10 @@ var getCmd = &cobra.Command{
 			return err
 		}
 
-		f, err = os.OpenFile(fmt.Sprintf("%s-cert.pub", privKeyPath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		certPath := fmt.Sprintf("%s-cert.pub", privKeyPath)
+		f, err = os.OpenFile(certPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
-			return fmt.Errorf("could not create certificate file %q: %w", fmt.Sprintf("%s-cert.pub", output), err)
+			return fmt.Errorf("could not create certificate file %q: %w", certPath, err)
 		}
 		f.WriteString(resp.Certificate)
 		f.WriteString("\n")

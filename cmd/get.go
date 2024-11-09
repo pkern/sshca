@@ -97,7 +97,7 @@ var getCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("could not create private key file %q: %w", privKeyPath, err)
 		}
-		block, err := ssh.MarshalPrivateKey(priv, fmt.Sprintf("SSHCA/%s authentication key (%s)", domain, time.Now().Format("2006-01-02 15:04:05.999999999")))
+		block, err := ssh.MarshalPrivateKey(priv, fmt.Sprintf("SSHCA/%s authentication key (%s)", domain, time.Now().Format(timeFormat)))
 		if err != nil {
 			return fmt.Errorf("could not marshal private key: %w", err)
 		}

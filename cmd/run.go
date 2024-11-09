@@ -16,12 +16,15 @@ limitations under the License.
 package cmd
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log/syslog"
 	"os"
 	"os/user"
+	"path"
 	"strings"
 	"time"
 
@@ -65,6 +68,7 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 const (
 	backdate        = 5 * time.Minute
 	defaultLifetime = 1 * time.Hour
+	timeFormat      = "2006-01-02 15:04:05 -0700"
 )
 
 var defaultExtensions = map[string]string{
@@ -105,6 +109,21 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("could not load the issuing machine's hostname: %w", err)
 		}
 
+		// If ExposeAuthInfo is set in the sshd, record that information for
+		// later audit logging. Missing information is not critical.
+		var caller string
+		if fn := os.Getenv("SSH_USER_AUTH"); fn != "" {
+			info, err := os.ReadFile(fn)
+			if err != nil {
+				return fmt.Errorf("SSH_USER_AUTH was set, but file %q cannot be read: %w", fn, err)
+			}
+			pubkey, _, _, _, err := ssh.ParseAuthorizedKey(info)
+			if err != nil {
+				return fmt.Errorf("could not parse SSH_USER_AUTH file %q: %w", fn, err)
+			}
+			caller = ssh.FingerprintSHA256(pubkey)
+		}
+
 		var r Request
 		if err := json.NewDecoder(os.Stdin).Decode(&r); err != nil {
 			return fmt.Errorf("could not decode JSON request: %w", err)
@@ -123,7 +142,7 @@ var runCmd = &cobra.Command{
 		if lifetime == 0 {
 			lifetime = defaultLifetime
 		}
-		expiry := time.Now().Add(lifetime)
+		expiry := time.Now().Add(lifetime).Truncate(time.Second)
 
 		for _, t := range r.Principals {
 			if !policy.ForUser(u).CanIssueFor(t, time.Duration(r.Lifetime)) {
@@ -154,6 +173,20 @@ var runCmd = &cobra.Command{
 		}
 		if err := cert.SignCert(rand.Reader, auth); err != nil {
 			return fmt.Errorf("could not sign certificate: %w", err)
+		}
+
+		l, err := syslog.New(syslog.LOG_AUTH|syslog.LOG_NOTICE, path.Base(os.Args[0]))
+		if err != nil {
+			return fmt.Errorf("could not connect to syslog for audit logging: %w", err)
+		}
+		var audit bytes.Buffer
+		fmt.Fprintf(&audit, "Issued certificate for %s", u.Username)
+		if caller != "" {
+			fmt.Fprintf(&audit, " (authenticated by %s)", caller)
+		}
+		fmt.Fprintf(&audit, ": principals %v, valid until %s", r.Principals, expiry.Format(timeFormat))
+		if _, err := audit.WriteTo(l); err != nil {
+			return fmt.Errorf("could not write audit entry to syslog: %w", err)
 		}
 
 		resp := &Response{Certificate: strings.TrimSuffix(string(ssh.MarshalAuthorizedKey(&cert)), "\n")}

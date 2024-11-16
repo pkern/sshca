@@ -48,6 +48,18 @@ $ ssh-keygen -L -f /run/user/1000/sshca/example-cert.pub
 # Shell to some host that accepts the CA
 ```
 
+You might want to configure SSH to try the CA's certificate first - otherwise
+SSH seems to still prefer the Security Key over the certificate in most
+circumstances:
+
+```sh
+$ cat >> ~/.ssh/config
+Match host *.example.com
+        IdentitiesOnly yes
+        IdentityFile /run/user/1000/sshca/example
+        IdentityFile ~/.ssh/id_ecdsa_sk
+```
+
 ## Setting up the CA
 
 You need to setup a host where users can log into (preferably) a dedicated user

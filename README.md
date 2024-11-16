@@ -19,6 +19,7 @@ ca_user = 'sshca'
 domain = 'example'
 lifetime = '19h0m0s'
 principals = ['root', '$USER']
+EOF
 ```
 
 ```sh

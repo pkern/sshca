@@ -71,8 +71,8 @@ In the above setup, the CA runs as user `sshca` on host `cahost.example.com`.
 `authorized_keys` would look like this:
 
 ```
-command="/path/to/sshca run user",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,no-user-rc sk-ssh-ed25519@openssh.com [...]
-command="/path/to/sshca run anotheruser",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,no-user-rc sk-ssh-ed25519@openssh.com [...]
+command="/path/to/sshca run user",restrict sk-ssh-ed25519@openssh.com [...]
+command="/path/to/sshca run anotheruser",restrict sk-ssh-ed25519@openssh.com [...]
 ```
 
 The CA expects the location of the signing key in `~/.sshca.toml`:

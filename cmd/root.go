@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 certificates to users. It is commonly used like this in authorized_keys
 of a role account:
 
-no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command="sshca run <username>" ssh-rsa [...]
+restrict,command="sshca run <username>" ssh-rsa [...]
 
 It will take a JSON-encoded request on stdin and output a JSON structure
 containing a certificate to stdout.`,

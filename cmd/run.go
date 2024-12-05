@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"log/syslog"
 	"os"
-	"os/user"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/pkern/sshca/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
@@ -99,9 +99,9 @@ var runCmd = &cobra.Command{
 	Args:         cobra.ExactArgs(1),
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		u, err := user.Lookup(args[0])
+		u, err := config.LookupUser(args[0])
 		if err != nil {
-			return fmt.Errorf("invalid user %q: %w", args[0], err)
+			return fmt.Errorf("could not lookup user %q: %w", args[0], err)
 		}
 
 		h, err := os.Hostname()

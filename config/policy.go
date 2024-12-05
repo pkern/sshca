@@ -22,8 +22,28 @@ import (
 	"time"
 )
 
+type User struct {
+	*user.User
+}
+
+func (u *User) GroupIds() ([]string, error) {
+	if u.User.Uid != "" {
+		return u.User.GroupIds()
+	}
+	return nil, nil
+}
+
+func LookupUser(username string) (*User, error) {
+	u, err := user.Lookup(username)
+	if err != nil {
+		// Create a stub no local user is found.
+		return &User{User: &user.User{Username: username}}, nil
+	}
+	return &User{User: u}, nil
+}
+
 type Policy interface {
-	ForUser(user *user.User) UserPolicy
+	ForUser(user *User) UserPolicy
 }
 
 type UserPolicy interface {
@@ -34,11 +54,11 @@ type UserPolicy interface {
 // the "root" user - in addition to allowing everyone is issue for themselves.
 type AdminOnlyPolicy struct{}
 
-func (AdminOnlyPolicy) ForUser(user *user.User) UserPolicy {
+func (AdminOnlyPolicy) ForUser(user *User) UserPolicy {
 	return (*adminOnlyPolicyUser)(user)
 }
 
-type adminOnlyPolicyUser user.User
+type adminOnlyPolicyUser User
 
 func groups(u *user.User) ([]string, error) {
 	ids, err := u.GroupIds()
@@ -66,6 +86,6 @@ func (u *adminOnlyPolicyUser) CanIssueFor(username string, duration time.Duratio
 	if username != "root" {
 		return false
 	}
-	groups, _ := groups((*user.User)(u))
+	groups, _ := groups(u.User)
 	return slices.Contains(groups, "adm")
 }

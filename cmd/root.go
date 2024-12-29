@@ -49,12 +49,15 @@ func Execute() {
 var (
 	cfgFile        string
 	signingKeyFile string
+	caDir          string
 )
 
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sshca.toml)")
 	rootCmd.PersistentFlags().StringVar(&signingKeyFile, "signing-key", "", "signing key file")
+	rootCmd.PersistentFlags().StringVar(&caDir, "ca-dir", "", "CA directory")
+	viper.BindPFlag("signing_ca_directory", rootCmd.PersistentFlags().Lookup("ca-dir"))
 	viper.BindPFlag("signing_key_filename", rootCmd.PersistentFlags().Lookup("signing-key"))
 }
 

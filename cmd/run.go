@@ -150,7 +150,11 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		priv, err := loadSigningKey(viper.GetString("signing_key_filename"))
+		keyFn := viper.GetString("signing_key_filename")
+		if keyFn == "" {
+			keyFn = path.Join(viper.GetString("signing_ca_directory"), "current")
+		}
+		priv, err := loadSigningKey(keyFn)
 		if err != nil {
 			return fmt.Errorf("could not load signing key file %q: %w", signingKeyFile, err)
 		}

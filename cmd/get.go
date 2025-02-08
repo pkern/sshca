@@ -116,7 +116,7 @@ var getCmd = &cobra.Command{
 		}
 
 		stdout, err = exec.Command("ssh-add", "-L").Output()
-		if err != nil {
+		if exiterr, ok := err.(*exec.ExitError); (ok && exiterr.ExitCode() == 2) || (!ok && err != nil) {
 			return fmt.Errorf("could not query the SSH agent for its keys: %w", err)
 		}
 		var remove bytes.Buffer

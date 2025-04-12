@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"strconv"
 
@@ -105,7 +106,8 @@ func generateKey(fn string) error {
 	if err != nil {
 		return fmt.Errorf("could not create SSH public key: %w", err)
 	}
-	if err := os.WriteFile(fn+".pub", ssh.MarshalAuthorizedKey(sshPub), 0o444); err != nil {
+	ver := filepath.Base(fn)
+	if err := os.WriteFile(fn+".pub", []byte(fmt.Sprintf("%s %s\n", ssh.MarshalAuthorizedKey(sshPub), ver)), 0o444); err != nil {
 		return fmt.Errorf("could not write public key file %q: %w", fn+".pub", err)
 	}
 	return nil

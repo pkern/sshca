@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/pem"
@@ -107,7 +108,10 @@ func generateKey(fn string) error {
 		return fmt.Errorf("could not create SSH public key: %w", err)
 	}
 	ver := filepath.Base(fn)
-	if err := os.WriteFile(fn+".pub", []byte(fmt.Sprintf("%s %s\n", ssh.MarshalAuthorizedKey(sshPub), ver)), 0o444); err != nil {
+	key := ssh.MarshalAuthorizedKey(sshPub)
+	key = bytes.TrimSuffix(key, []byte("\n"))
+	key = append(key, []byte(fmt.Sprintf(" %s\n", ver))...)
+	if err := os.WriteFile(fn+".pub", key, 0o444); err != nil {
 		return fmt.Errorf("could not write public key file %q: %w", fn+".pub", err)
 	}
 	return nil

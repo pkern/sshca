@@ -126,10 +126,14 @@ var getCmd = &cobra.Command{
 				remove.Write([]byte("\n"))
 			}
 		}
-		c = exec.Command("ssh-add", "-D")
-		c.Stdin = &remove
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("could not remove old authentication keys from the agent: %w", err)
+		if remove.Len() > 0 {
+			c = exec.Command("ssh-add", "-d", "-")
+			c.Stdin = bytes.NewReader(remove.Bytes())
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("could not remove old authentication keys from the agent: %w", err)
+			}
 		}
 
 		c = exec.Command("ssh-add", privKeyPath)

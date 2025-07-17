@@ -57,6 +57,7 @@ circumstances:
 $ cat >> ~/.ssh/config
 Match host *.example.com
         IdentitiesOnly yes
+        CertificateFile /run/user/%i/sshca/example-cert.pub
         IdentityFile /run/user/%i/sshca/example
         IdentityFile ~/.ssh/id_ecdsa_sk
 ```
